@@ -1,10 +1,10 @@
 package screens
 
 import (
-	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/n9te9/agent-tui-monitor/domain"
 	"github.com/n9te9/agent-tui-monitor/ui/components"
 )
@@ -39,7 +39,13 @@ func (m AgentListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.agents)-1 {
 				m.cursor++
 			}
-
+		case "enter":
+			selectedAgent := m.agents[m.cursor]
+			return m, func() tea.Msg {
+				return PushScreenMessage{
+					Screen: NewChatScreen(selectedAgent),
+				}
+			}
 		}
 	}
 	return m, nil
@@ -47,19 +53,15 @@ func (m AgentListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m AgentListModel) View() string {
 	var b strings.Builder
-	b.WriteString("Agent List\n")
+	titleStyle := lipgloss.NewStyle().Bold(true).Underline(true).Padding(0, 1)
+	b.WriteString(titleStyle.Render("Agent List") + "\n\n")
 
-	for i, agent := range m.agents {
-		cursor := " "
-		if i == m.cursor {
-			cursor = ">"
-		}
+	table := components.RenderTable(m.agents, m.cursor)
+	b.WriteString(table)
 
-		statusBudge := components.RenderStatusBadge(agent.Status)
-		row := fmt.Sprintf("%s %-10s %-15s %s\n", cursor, agent.ID, agent.Name, statusBudge)
-		b.WriteString(row)
-	}
+	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#4C566A")).Padding(1, 0, 0, 1)
+	b.WriteString(footerStyle.Render("<Enter> Chat  <q> Quit   <j/k> Navigate"))
+	b.WriteString("\n")
 
-	b.WriteString("\n[q] Quit [j/k] Navigate\n")
 	return b.String()
 }
